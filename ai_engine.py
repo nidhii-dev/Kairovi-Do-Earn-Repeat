@@ -8,7 +8,7 @@ import json
 from io import BytesIO
 import hashlib
 import os
-from typing import Any
+from typing import Any, cast
 
 from google import genai
 from google.genai import types
@@ -116,6 +116,9 @@ def verify_proof_with_gemini(
     mime_type, image_error = _validate_image(image_bytes)
     if image_error:
         return _failure(image_error)
+    if mime_type is None:
+        return _failure("Unable to determine the uploaded image format.")
+    validated_mime_type = cast(str, mime_type)
 
     try:
         client = genai.Client(api_key=api_key.strip())
@@ -126,7 +129,7 @@ def verify_proof_with_gemini(
                 types.Content(
                     role="user",
                     parts=[
-                        types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                        types.Part.from_bytes(data=image_bytes, mime_type=validated_mime_type),
                         types.Part.from_text(
                             text=(
                                 f"Verification criteria: {prompt_criteria.strip()}\n\n"
